@@ -12,17 +12,19 @@ public class MainController {
     private final DashboardView dashboardView;
     private final PlayView playView;
     private final HelpView helpView;
+    private final AboutView aboutView;
     private final JPanel cardPanel;
     private final CardLayout cardLayout;
     private Timer timer;
     private int currentTick = 0;
 
-    public MainController(SplashScreenView splashView, DashboardView dashboardView, PlayView playView, HelpView helpView, JPanel cardPanel, CardLayout cardLayout) {
+    public MainController(SplashScreenView splashView, DashboardView dashboardView, PlayView playView, HelpView helpView, AboutView aboutView, JPanel cardPanel, CardLayout cardLayout) {
         this.splashView = splashView;
         this.dashboardView = dashboardView;
         this.playView = playView;
         this.helpView = helpView;
         this.cardPanel = cardPanel;
+        this.aboutView = aboutView;
         this.cardLayout = cardLayout;
 
         initController();
@@ -123,8 +125,7 @@ public class MainController {
         });
 
         dashboardView.getAboutBtn().addActionListener(e -> {
-            System.out.println("PaperTrail about button clicked!");
-            // Future logic goes here
+            cardLayout.show(cardPanel, "About");
         });
 
         dashboardView.getSettingsBtn().addActionListener(e -> {
@@ -134,6 +135,18 @@ public class MainController {
 
         helpView.getBackBtn().addActionListener(e -> {
             cardLayout.show(cardPanel, "Dashboard");
+        });
+
+        aboutView.getBackBtn().addActionListener(e -> {
+            cardLayout.show(cardPanel, "Dashboard");
+        });
+
+        aboutView.getGithubBtn().addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new java.net.URI("https://github.com/YourUsername/YourRepository"));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         dashboardView.getExitBtn().addActionListener(e -> {
