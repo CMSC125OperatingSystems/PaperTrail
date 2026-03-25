@@ -15,6 +15,7 @@ public class Main {
         SplashScreenView splashPanel = new SplashScreenView();
         DashboardView dashboardPanel = new DashboardView();
         PlayView playPanel = new PlayView();
+        HelpView helpPanel = new HelpView();
 
         // Setup CardLayout
         CardLayout cardLayout = new CardLayout();
@@ -24,12 +25,13 @@ public class Main {
         mainCardPanel.add(splashPanel, "Splash");
         mainCardPanel.add(dashboardPanel, "Dashboard");
         mainCardPanel.add(playPanel, "Play");
+        mainCardPanel.add(helpPanel, "Help");
 
         // Show splash screen first
         cardLayout.show(mainCardPanel, "Splash");
 
         // Initialize Controller, passing in views and CardLayout setup
-        new MainController(splashPanel, dashboardPanel, playPanel, mainCardPanel, cardLayout);
+        new MainController(splashPanel, dashboardPanel, playPanel, helpPanel, mainCardPanel, cardLayout);
 
         // Add CardLayout panel to frame and display
         frame.add(mainCardPanel);

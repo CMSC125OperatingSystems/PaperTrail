@@ -11,15 +11,17 @@ public class MainController {
     private final SplashScreenView splashView;
     private final DashboardView dashboardView;
     private final PlayView playView;
+    private final HelpView helpView;
     private final JPanel cardPanel;
     private final CardLayout cardLayout;
     private Timer timer;
     private int currentTick = 0;
 
-    public MainController(SplashScreenView splashView, DashboardView dashboardView, PlayView playView, JPanel cardPanel, CardLayout cardLayout) {
+    public MainController(SplashScreenView splashView, DashboardView dashboardView, PlayView playView, HelpView helpView, JPanel cardPanel, CardLayout cardLayout) {
         this.splashView = splashView;
         this.dashboardView = dashboardView;
         this.playView = playView;
+        this.helpView = helpView;
         this.cardPanel = cardPanel;
         this.cardLayout = cardLayout;
 
@@ -117,8 +119,7 @@ public class MainController {
         });
 
         dashboardView.getHelpBtn().addActionListener(e -> {
-            System.out.println("PaperTrail help button clicked!");
-            // Future logic goes here
+            cardLayout.show(cardPanel, "Help");
         });
 
         dashboardView.getAboutBtn().addActionListener(e -> {
@@ -129,6 +130,10 @@ public class MainController {
         dashboardView.getSettingsBtn().addActionListener(e -> {
             System.out.println("PaperTrail settings button clicked!");
             // Future logic goes here
+        });
+
+        helpView.getBackBtn().addActionListener(e -> {
+            cardLayout.show(cardPanel, "Dashboard");
         });
 
         dashboardView.getExitBtn().addActionListener(e -> {
