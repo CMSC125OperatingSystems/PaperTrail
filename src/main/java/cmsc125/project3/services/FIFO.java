@@ -1,5 +1,7 @@
 package cmsc125.project3.services;
 
+import java.util.Arrays;
+
 /**
  * FIFO
  * this is a service algrithm for the
@@ -8,6 +10,7 @@ package cmsc125.project3.services;
 public class FIFO {
     int[] reference;
     int[] frame;
+    int[] arrivalTimes;
     int framePointer;
     int referencePointer;
     boolean pageStatus;
@@ -16,13 +19,13 @@ public class FIFO {
 	public FIFO(int[] reference, int frameSize) {
         this.reference = reference;
         frame = new int[frameSize];
+        arrivalTimes = new int[frameSize];
         framePointer = 0;
         referencePointer = 0;
         pageStatus = false;
 
-        for (int f = 0; f < frameSize; f++) {
-            frame[f] = -1;
-        }
+        Arrays.fill(frame, -1);
+        Arrays.fill(arrivalTimes, -1);
     }
 
     public boolean simulateStep() {
@@ -43,14 +46,34 @@ public class FIFO {
         if (!hit) {
             pageStatus = false;
             frame[framePointer] = currentPage;
+            arrivalTimes[framePointer] = referencePointer; //reference pointer also functions as a "timer"
 
-            framePointer = (framePointer + 1) % frame.length;
+            framePointer = findNextFramePointer();
         } else {
             pageStatus = true;
         }
 
         referencePointer++;
         return true;
+    }
+
+    protected int findNextFramePointer() {
+        int min = Integer.MAX_VALUE;
+        int pointer = 0;
+        int minPointer = 0;
+
+        for (pointer = 0; pointer < arrivalTimes.length; pointer++) {
+            if (arrivalTimes[pointer] == -1) {
+                minPointer = pointer;
+                break;
+            }
+
+            if (arrivalTimes[pointer] < min) {
+                min = arrivalTimes[pointer];
+                minPointer = pointer;
+            }
+        }
+        return minPointer;
     }
 
     public int[] getReference() {
