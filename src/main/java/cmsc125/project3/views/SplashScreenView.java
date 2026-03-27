@@ -22,6 +22,10 @@ public class SplashScreenView extends JPanel implements ThemeManager.ThemeObserv
         repaint();
     }
 
+    public int getProgressTick() {
+        return progressTick;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
