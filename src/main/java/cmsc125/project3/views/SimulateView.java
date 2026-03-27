@@ -47,6 +47,7 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         algoCheckboxes = new JCheckBoxMenuItem[algos.length];
         for (int i = 0; i < algos.length; i++) {
             algoCheckboxes[i] = new JCheckBoxMenuItem(algos[i]);
+            algoCheckboxes[i].putClientProperty("CheckBoxMenuItem.doNotCloseOnMouseClick", true);
             algorithmPopupMenu.add(algoCheckboxes[i]);
         }
         algorithmMenuBtn.addActionListener(e -> algorithmPopupMenu.show(algorithmMenuBtn, 0, algorithmMenuBtn.getHeight()));
