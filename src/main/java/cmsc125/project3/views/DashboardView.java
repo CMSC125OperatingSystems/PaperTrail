@@ -6,8 +6,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.font.TextLayout;
-import java.awt.geom.AffineTransform;
 
 public class DashboardView extends JPanel implements ThemeManager.ThemeObserver {
     private JButton helpBtn, aboutBtn, settingsBtn, startBtn, exitBtn;
@@ -143,6 +141,7 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
             int textX = (getWidth() - metrics.stringWidth(text)) / 2;
             int textY = getHeight() / 2 + 50;
 
+            // Draw Shadow
             g2d.setColor(shadowColor);
             int thickness = 5;
             for (int i = -thickness; i <= thickness; i++) {
@@ -150,23 +149,26 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
                     g2d.drawString(text, textX + i, textY + j);
                 }
             }
+            // Draw Main Text
             g2d.setColor(topColor);
             g2d.drawString(text, textX, textY);
 
-            String playIcon = "▶︎";
-            Font playFont = new Font("Arial", Font.BOLD, 200);
-            TextLayout layout = new TextLayout(playIcon, playFont, g2d.getFontRenderContext());
-            int playX = (getWidth() - (int) layout.getAdvance()) / 2;
-            AffineTransform originalTransform = g2d.getTransform();
-            g2d.translate(playX, textY);
-            Shape playShape = layout.getOutline(null);
+            // Draw Custom Polygon Play Icon (Fixes the missing glyph box issue completely)
+            int size = 160;
+            int px = (getWidth() - size) / 2 + 10;
+            int py = (getHeight() - size) / 2;
+
+            Polygon playShape = new Polygon();
+            playShape.addPoint(px, py); // Top left
+            playShape.addPoint(px + size, py + size / 2); // Center Right
+            playShape.addPoint(px, py + size); // Bottom left
 
             g2d.setColor(playFillColor);
-            g2d.fill(playShape);
+            g2d.fillPolygon(playShape);
+
             g2d.setColor(playStrokeColor);
-            g2d.setStroke(new BasicStroke(5));
-            g2d.draw(playShape);
-            g2d.setTransform(originalTransform);
+            g2d.setStroke(new BasicStroke(6));
+            g2d.drawPolygon(playShape);
         }
     }
 

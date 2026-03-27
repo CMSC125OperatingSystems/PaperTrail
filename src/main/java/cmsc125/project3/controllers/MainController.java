@@ -1,4 +1,4 @@
-package cmsc125.project3;
+package cmsc125.project3.controllers;
 
 import cmsc125.project3.services.*;
 import cmsc125.project3.views.*;
@@ -36,7 +36,6 @@ public class MainController {
     }
 
     private void initGeneralListeners(SplashScreenView splash, DashboardView dash, HelpView help, AboutView about) {
-        // Splash Screen Timer
         new Timer(100, e -> {
             splash.setProgressTick(splash.getProgressTick() + 1);
             if (splash.getProgressTick() >= 10) {
@@ -45,7 +44,6 @@ public class MainController {
             }
         }).start();
 
-        // Dashboard Navigation
         dash.getStartBtn().addActionListener(e -> cardLayout.show(cardPanel, "Simulate"));
         dash.getSettingsBtn().addActionListener(e -> {
             JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(dash);
@@ -59,7 +57,6 @@ public class MainController {
             }
         });
 
-        // Back Buttons
         simulateView.getBackBtn().addActionListener(e -> { if (simTimer != null) simTimer.stop(); cardLayout.show(cardPanel, "Dashboard"); });
         help.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
         about.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
@@ -112,7 +109,6 @@ public class MainController {
     private void startSimulation() {
         if (simTimer != null) simTimer.stop();
 
-        // 1. Validate Input & Get Selected Algos
         String input = simulateView.getPageRefField().getText().trim();
         if (input.isEmpty()) { JOptionPane.showMessageDialog(simulateView, "Page reference string is empty.", "Input Error", JOptionPane.WARNING_MESSAGE); return; }
 
@@ -128,7 +124,6 @@ public class MainController {
         int frameSize = (int) simulateView.getFrameSizeSpinner().getValue();
         totalSteps = sequence.length;
 
-        // 2. Clear Old Results and Initialize New Simulation State
         simulateView.clearResults();
         simulateView.setInfo(input, frameSize);
         runningSimulations.clear();
@@ -138,10 +133,10 @@ public class MainController {
             FIFO sim = createAlgorithmInstance(algoName, sequence, frameSize);
             runningSimulations.add(sim);
             runningAlgoNames.add(algoName);
-            simulateView.addAlgorithmPanel(algoName);
+            // PASSED FRAMESIZE HERE SO IT CALCULATES HEIGHT CORRECTLY!
+            simulateView.addAlgorithmPanel(algoName, frameSize);
         }
 
-        // 3. Start Simulation Timer
         simTimer = new Timer(getSpeedDelay(), e -> simulationStep());
         simTimer.start();
     }
@@ -168,7 +163,6 @@ public class MainController {
         simTimer.stop();
         for (int i = 0; i < runningSimulations.size(); i++) {
             int faults = 0;
-            // Count faults manually at the end for accuracy
             FIFO sim = createAlgorithmInstance(runningAlgoNames.get(i), runningSimulations.get(i).getReference(), runningSimulations.get(i).getFrame().length);
             while(sim.simulateStep()) {
                 if (!sim.getPageStatus()) faults++;
@@ -178,8 +172,6 @@ public class MainController {
             simulateView.addSummaryToAlgorithm(i, hits, faults, faultRate);
         }
     }
-
-    // --- UTILITY AND HELPER METHODS ---
 
     private FIFO createAlgorithmInstance(String name, int[] ref, int fs) {
         switch(name) {

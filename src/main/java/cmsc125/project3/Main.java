@@ -1,5 +1,6 @@
 package cmsc125.project3;
 
+import cmsc125.project3.controllers.MainController;
 import cmsc125.project3.theme.ThemeManager;
 import cmsc125.project3.views.*;
 

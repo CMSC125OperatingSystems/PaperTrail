@@ -17,8 +17,8 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
     private JButton algorithmMenuBtn, runBtn, randomBtn, browseBtn, resetBtn, backBtn, outputBtn;
     private JLabel frameLabel, speedLabel;
 
-    private JPanel resultsContainer; // Main container for all dynamic panels
-    private JLabel infoLabel; // Displays Ref String and Frame Size
+    private JPanel resultsContainer;
+    private JLabel infoLabel;
 
     public SimulateView() {
         setLayout(new BorderLayout());
@@ -30,7 +30,6 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
     }
 
     private void initComponents() {
-        // --- TOP INPUT PANEL ---
         JPanel topWrapper = new JPanel();
         topWrapper.setLayout(new BoxLayout(topWrapper, BoxLayout.Y_AXIS));
 
@@ -80,13 +79,13 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         topWrapper.add(row2);
         add(topWrapper, BorderLayout.NORTH);
 
-        // --- CENTER RESULTS PANEL ---
         JPanel centerWrapper = new JPanel(new BorderLayout());
         centerWrapper.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
-        resultsContainer = new JPanel();
-        resultsContainer.setLayout(new BoxLayout(resultsContainer, BoxLayout.Y_AXIS));
-        infoLabel = new JLabel(" ", SwingConstants.CENTER); // Placeholder
 
+        resultsContainer = new JPanel();
+        resultsContainer.setLayout(new BoxLayout(resultsContainer, BoxLayout.Y_AXIS)); // Vertical stacking
+
+        infoLabel = new JLabel(" ", SwingConstants.CENTER);
         JPanel infoPanel = new JPanel(new BorderLayout());
         infoPanel.add(infoLabel, BorderLayout.CENTER);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
@@ -102,7 +101,6 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         centerWrapper.add(scrollPane, BorderLayout.CENTER);
         add(centerWrapper, BorderLayout.CENTER);
 
-        // --- BOTTOM CONTROLS PANEL ---
         JPanel bottomPanel = new JPanel(new BorderLayout());
         JPanel bottomLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         speedLabel = new JLabel();
@@ -127,7 +125,6 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
     @Override
     public void onThemeChanged() {
         applyTheme();
-        // Force redraw of all child components
         SwingUtilities.updateComponentTreeUI(this);
     }
 
@@ -139,9 +136,9 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         algorithmMenuBtn.setFont(primaryFont);
         frameLabel.setFont(primaryFont);
         pageRefField.setFont(primaryFont);
-        infoLabel.setFont(new Font("Monospaced", Font.BOLD, ThemeManager.getSecondaryFontSize()));
 
         Font secondaryFont = new Font("Arial", Font.PLAIN, ThemeManager.getSecondaryFontSize());
+        infoLabel.setFont(new Font("Monospaced", Font.BOLD, ThemeManager.getSecondaryFontSize()));
         speedDropdown.setFont(secondaryFont);
         speedLabel.setFont(secondaryFont);
         runBtn.setFont(secondaryFont);
@@ -181,8 +178,9 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         infoLabel.setText(infoText);
     }
 
-    public void addAlgorithmPanel(String name) {
-        resultsContainer.add(new AlgorithmResultPanel(name));
+    // Passes the frameSize so the panel can lock its height perfectly
+    public void addAlgorithmPanel(String name, int frameSize) {
+        resultsContainer.add(new AlgorithmResultPanel(name, frameSize));
         resultsContainer.revalidate();
     }
 
@@ -202,36 +200,61 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
 
     private static class AlgorithmResultPanel extends JPanel {
         private final SimulationBoard board;
+        private final int requiredHeight;
 
-        public AlgorithmResultPanel(String name) {
+        public AlgorithmResultPanel(String name, int frameSize) {
             setLayout(new BorderLayout());
-            setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(ThemeManager.getAccentBlue()), name
-            ));
+            setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(ThemeManager.getAccentBlue()), name));
 
-            board = new SimulationBoard();
+            board = new SimulationBoard(frameSize);
             JScrollPane scrollPane = new JScrollPane(board);
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER); // Lock vertical scroll inside the board
 
+            // Calculate absolute height so BoxLayout doesn't squish it
+            int cellSize = Math.max(35, ThemeManager.getSecondaryFontSize() + 15);
+            int boardHeight = 80 + (frameSize * cellSize);
+            this.requiredHeight = boardHeight + 60; // Extra padding for the title and summary
+
+            scrollPane.setPreferredSize(new Dimension(800, boardHeight));
             add(scrollPane, BorderLayout.CENTER);
         }
 
+        // THESE 2 OVERRIDES PREVENT VERTICAL SQUISHING ENTIRELY
+        @Override
+        public Dimension getMaximumSize() { return new Dimension(Integer.MAX_VALUE, requiredHeight); }
+        @Override
+        public Dimension getMinimumSize() { return new Dimension(400, requiredHeight); }
+        @Override
+        public Dimension getPreferredSize() { return new Dimension(800, requiredHeight); }
+
         public void addStep(int page, int[] frames, boolean isHit) {
             board.addStep(page, frames, isHit);
+
+            // Auto scroll to the right as it plays
+            JScrollPane scroll = (JScrollPane) getComponent(0);
+            JScrollBar horizontalBar = scroll.getHorizontalScrollBar();
+            horizontalBar.setValue(horizontalBar.getMaximum());
         }
 
         public void addSummary(int hits, int faults, double faultRate) {
             JPanel summaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 5));
             summaryPanel.setBackground(ThemeManager.getPanelColor());
 
-            String hitsText = String.format("Total Hits: %d", hits);
-            String faultsText = String.format("Total Faults: %d", faults);
-            String rateText = String.format("Fault Rate: %.2f%%", faultRate * 100);
+            Font font = new Font("Arial", Font.BOLD, ThemeManager.getSecondaryFontSize());
 
-            summaryPanel.add(new JLabel(hitsText));
-            summaryPanel.add(new JLabel(faultsText));
-            summaryPanel.add(new JLabel(rateText));
+            JLabel hitsLabel = new JLabel(String.format("Total Hits: %d", hits));
+            JLabel faultsLabel = new JLabel(String.format("Total Faults: %d", faults));
+            JLabel rateLabel = new JLabel(String.format("Fault Rate: %.2f%%", faultRate * 100));
+
+            hitsLabel.setFont(font); faultsLabel.setFont(font); rateLabel.setFont(font);
+            hitsLabel.setForeground(ThemeManager.getTextColor());
+            faultsLabel.setForeground(ThemeManager.getTextColor());
+            rateLabel.setForeground(ThemeManager.getTextColor());
+
+            summaryPanel.add(hitsLabel);
+            summaryPanel.add(faultsLabel);
+            summaryPanel.add(rateLabel);
 
             add(summaryPanel, BorderLayout.SOUTH);
             revalidate();
@@ -240,15 +263,18 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
 
     private static class SimulationBoard extends JPanel {
         private final List<StepData> steps = new ArrayList<>();
-        private int frameSize = 4;
+        private final int frameSize;
 
-        public void clear() { steps.clear(); repaint(); }
-        public void setFrameSize(int size) { this.frameSize = size; }
+        public SimulationBoard(int frameSize) {
+            this.frameSize = frameSize;
+            setBackground(ThemeManager.getBackgroundColor());
+        }
 
         public void addStep(int page, int[] frames, boolean isHit) {
             steps.add(new StepData(page, frames, isHit));
-            int requiredWidth = Math.max(600, steps.size() * 45 + 40);
-            int requiredHeight = 120 + (frameSize * 35);
+            int cellSize = Math.max(35, ThemeManager.getSecondaryFontSize() + 15);
+            int requiredWidth = Math.max(600, steps.size() * (cellSize + 10) + 40);
+            int requiredHeight = 80 + (frameSize * cellSize);
             setPreferredSize(new Dimension(requiredWidth, requiredHeight));
             revalidate();
             repaint();
@@ -261,40 +287,56 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+            int fontSize = ThemeManager.getSecondaryFontSize();
+            int cellSize = Math.max(35, fontSize + 15);
+            int colWidth = cellSize + 10;
+            int rowHeight = cellSize;
+
+            int startX = 20;
+            int startY = 30;
+
             for (int i = 0; i < steps.size(); i++) {
                 StepData step = steps.get(i);
-                int currentX = 20 + i * 45;
+                int currentX = startX + i * colWidth;
 
-                // Draw Page
+                // Draw Requested Page
                 g2d.setColor(ThemeManager.getTextColor());
-                g2d.setFont(new Font("Arial", Font.BOLD, 18));
-                g2d.drawString(String.valueOf(step.page), currentX + 10, 25);
+                g2d.setFont(new Font("Arial", Font.BOLD, fontSize + 4));
+                FontMetrics fmPrimary = g2d.getFontMetrics();
+                String pageStr = String.valueOf(step.page);
+                g2d.drawString(pageStr, currentX + (cellSize - fmPrimary.stringWidth(pageStr)) / 2, startY);
 
-                // Draw Frames
+                // Draw Memory Frames
+                g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
+                FontMetrics fmSec = g2d.getFontMetrics();
                 for (int f = 0; f < frameSize; f++) {
-                    int boxY = 35 + f * 35;
+                    int boxY = startY + 10 + f * rowHeight;
                     g2d.setColor(ThemeManager.getAccentBlue());
-                    g2d.drawRect(currentX, boxY, 30, 30);
+                    g2d.drawRect(currentX, boxY, cellSize, cellSize);
+
                     if (step.frames[f] != -1) {
                         g2d.setColor(ThemeManager.getAccentOrange());
-                        g2d.drawString(String.valueOf(step.frames[f]), currentX + 10, boxY + 22);
+                        String frameStr = String.valueOf(step.frames[f]);
+                        g2d.drawString(frameStr, currentX + (cellSize - fmSec.stringWidth(frameStr)) / 2, boxY + (cellSize/2) + (fontSize/2) - 2);
                     }
                 }
 
-                // Draw Hit/Miss
-                int statusY = 40 + frameSize * 35;
+                // Draw Status (Hit / Miss)
+                int statusY = startY + 20 + frameSize * rowHeight;
                 if (step.isHit) {
                     g2d.setColor(ThemeManager.getAccentBlue());
-                    g2d.drawString("O", currentX + 10, statusY + 15);
+                    g2d.drawString("O", currentX + (cellSize - fmSec.stringWidth("O")) / 2, statusY);
                 } else {
                     g2d.setColor(ThemeManager.getErrorRed());
-                    g2d.drawString("X", currentX + 10, statusY + 15);
+                    g2d.drawString("X", currentX + (cellSize - fmSec.stringWidth("X")) / 2, statusY);
                 }
 
                 // Draw Step Number
                 g2d.setColor(ThemeManager.getSecondaryTextColor());
-                g2d.setFont(new Font("Arial", Font.PLAIN, 10));
-                g2d.drawString("S" + (i + 1), currentX + 8, statusY + 35);
+                g2d.setFont(new Font("Arial", Font.PLAIN, ThemeManager.getTertiaryFontSize()));
+                String stepNum = "S" + (i + 1);
+                FontMetrics fmTert = g2d.getFontMetrics();
+                g2d.drawString(stepNum, currentX + (cellSize - fmTert.stringWidth(stepNum)) / 2, statusY + ThemeManager.getTertiaryFontSize() + 5);
             }
         }
     }
@@ -304,7 +346,6 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         public StepData(int p, int[] f, boolean h) { page = p; frames = f.clone(); isHit = h; }
     }
 
-    // ... (Getters and other private methods remain) ...
     private JButton createIconButton(String imagePath, String text) {
         JButton btn = new JButton(text);
         btn.setForeground(ThemeManager.getTextColor());
@@ -314,6 +355,7 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         btn.setBorderPainted(false);
         return btn;
     }
+
     private void applyRealTimeFilter(JTextField textField) {
         ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException { if (string == null) return; processInput(fb, offset, 0, string); }
@@ -328,6 +370,7 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
             }
         });
     }
+
     private static class PlaceholderTextField extends JTextField {
         private final String placeholder;
         public PlaceholderTextField(String placeholder) { this.placeholder = placeholder; }

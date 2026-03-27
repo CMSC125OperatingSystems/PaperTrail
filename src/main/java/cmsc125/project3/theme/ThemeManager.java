@@ -12,7 +12,6 @@ public class ThemeManager {
     private static Theme currentTheme = Theme.DARK;
     private static FontSize currentSize = FontSize.MEDIUM;
 
-    // --- OBSERVER PATTERN FOR LIVE UPDATES ---
     public interface ThemeObserver { void onThemeChanged(); }
     private static final List<ThemeObserver> observers = new ArrayList<>();
 
@@ -31,26 +30,26 @@ public class ThemeManager {
     public static void setFontSize(FontSize size) { currentSize = size; }
     public static FontSize getFontSize() { return currentSize; }
 
-    // --- FONT SIZES (More Distinct) ---
+    // --- FONT SIZES (Drastically Increased) ---
     public static int getPrimaryFontSize() {
-        if (currentSize == FontSize.LARGE) return 22;
-        if (currentSize == FontSize.MEDIUM) return 18;
-        return 14; // Small
+        if (currentSize == FontSize.LARGE) return 36;
+        if (currentSize == FontSize.MEDIUM) return 24;
+        return 16;
     }
 
     public static int getSecondaryFontSize() {
-        if (currentSize == FontSize.LARGE) return 18;
-        if (currentSize == FontSize.MEDIUM) return 15;
-        return 12; // Small
+        if (currentSize == FontSize.LARGE) return 28;
+        if (currentSize == FontSize.MEDIUM) return 18;
+        return 14;
     }
 
     public static int getTertiaryFontSize() {
-        if (currentSize == FontSize.LARGE) return 14;
-        if (currentSize == FontSize.MEDIUM) return 12;
-        return 10; // Small
+        if (currentSize == FontSize.LARGE) return 20;
+        if (currentSize == FontSize.MEDIUM) return 14;
+        return 12;
     }
 
-    // ... (All color methods remain the same) ...
+    // --- COLORS ---
     public static Color getBackgroundColor() {
         return currentTheme == Theme.LIGHT ? Color.WHITE : new Color(0x121212);
     }
