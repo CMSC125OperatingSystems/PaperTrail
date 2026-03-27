@@ -5,7 +5,7 @@ import cmsc125.project3.services.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SCTest {
+class ESCTest {
 @Test
     void testEnhancedInitialLoadAndHit() {
         int[] reference = {1, 2, 1};

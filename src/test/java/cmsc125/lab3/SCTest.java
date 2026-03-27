@@ -5,7 +5,7 @@ import cmsc125.project3.services.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ESCTest {
+class SCTest {
     @Test
     void testSecondChanceLogic() {
         int[] reference = {0, 1, 2, 0, 3};
