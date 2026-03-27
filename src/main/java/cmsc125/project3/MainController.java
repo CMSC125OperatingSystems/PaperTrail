@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.StringJoiner;
 
 public class MainController {
+    // ... (all existing private final fields remain the same) ...
     private final SplashScreenView splashView;
     private final DashboardView dashboardView;
     private final SimulateView simulateView;
@@ -21,12 +22,10 @@ public class MainController {
 
     private Timer splashTimer;
     private int currentTick = 0;
-
-    // Simulation State Engine variables
     private Timer simTimer;
     private FIFO currentSimulation;
     private int faults = 0;
-    private int simTimeSeconds = 0;
+    private int simSteps = 0;
 
     public MainController(SplashScreenView splashView, DashboardView dashboardView, SimulateView simulateView, HelpView helpView, AboutView aboutView, JPanel cardPanel, CardLayout cardLayout) {
         this.splashView = splashView;
@@ -41,26 +40,29 @@ public class MainController {
     }
 
     private void initController() {
-        // Setup Splash Timer
-        splashTimer = new Timer(100, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentTick < 10) {
-                    currentTick++;
-                    splashView.setProgressTick(currentTick);
-                } else {
-                    splashTimer.stop();
-                    cardLayout.show(cardPanel, "Dashboard");
-                }
+        // ... (splash timer logic remains the same) ...
+        splashTimer = new Timer(100, e -> {
+            if (currentTick < 10) {
+                currentTick++;
+                splashView.setProgressTick(currentTick);
+            } else {
+                splashTimer.stop();
+                cardLayout.show(cardPanel, "Dashboard");
             }
         });
         splashTimer.start();
 
-        dashboardView.getStartBtn().addActionListener(e -> {
-            cardLayout.show(cardPanel, "Simulate");
+        dashboardView.getStartBtn().addActionListener(e -> cardLayout.show(cardPanel, "Simulate"));
+
+        // *** NEW: Open Settings Dialog ***
+        dashboardView.getSettingsBtn().addActionListener(e -> {
+            // Find the top-level JFrame to act as the owner of the dialog
+            JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(dashboardView);
+            SettingsDialog dialog = new SettingsDialog(topFrame);
+            dialog.setVisible(true);
         });
 
-        // Toggle functionality based on "Data Generation" type
+        // ... (all other listeners in initController remain the same) ...
         simulateView.getDataGenDropdown().addActionListener(e -> {
             String selectedOption = (String) simulateView.getDataGenDropdown().getSelectedItem();
             if (selectedOption != null && selectedOption.contains(".txt file")) {
@@ -76,17 +78,14 @@ public class MainController {
             }
         });
 
-        // Run (Play) Button Logic
         simulateView.getActionBtn().addActionListener(e -> {
             if ("Browse".equals(simulateView.getActionBtn().getText())) {
                 System.out.println("Opening File Chooser...");
-                // Future File Chooser logic
             } else {
                 startSimulation();
             }
         });
 
-        // Speed Dropdown Change Listener
         simulateView.getSpeedDropdown().addActionListener(e -> {
             if (simTimer != null && simTimer.isRunning()) {
                 simTimer.setDelay(getSpeedDelay());
@@ -108,9 +107,9 @@ public class MainController {
             simulateView.getDataGenDropdown().setSelectedIndex(0);
             simulateView.getSimulationBoard().clear();
             faults = 0;
-            simTimeSeconds = 0;
+            simSteps = 0;
             simulateView.updateFaults(faults);
-            simulateView.updateTimer(simTimeSeconds);
+            simulateView.updateSteps(simSteps);
         });
 
         simulateView.getBackBtn().addActionListener(e -> {
@@ -125,7 +124,6 @@ public class MainController {
 
         dashboardView.getHelpBtn().addActionListener(e -> cardLayout.show(cardPanel, "Help"));
         dashboardView.getAboutBtn().addActionListener(e -> cardLayout.show(cardPanel, "About"));
-        dashboardView.getSettingsBtn().addActionListener(e -> System.out.println("PaperTrail settings button clicked!"));
         helpView.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
         aboutView.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
 
@@ -170,13 +168,13 @@ public class MainController {
         simulateView.getSimulationBoard().clear();
         simulateView.getSimulationBoard().setFrameSize(frameSize);
         faults = 0;
-        simTimeSeconds = 0;
+        simSteps = 0;
         simulateView.updateFaults(faults);
-        simulateView.updateTimer(simTimeSeconds);
+        simulateView.updateSteps(simSteps);
 
         simTimer = new Timer(getSpeedDelay(), ev -> {
-            simTimeSeconds++;
-            simulateView.updateTimer(simTimeSeconds);
+            simSteps++;
+            simulateView.updateSteps(simSteps); // Changed from updateTimer
 
             boolean hasNext = currentSimulation.simulateStep();
             if (!hasNext) {
@@ -195,7 +193,6 @@ public class MainController {
 
             simulateView.getSimulationBoard().addStep(page, frames, isHit);
 
-            // Auto-scroll to the far right to see the latest step
             JScrollBar horizontalScrollBar = simulateView.getScrollPane().getHorizontalScrollBar();
             horizontalScrollBar.setValue(horizontalScrollBar.getMaximum());
         });
@@ -205,7 +202,7 @@ public class MainController {
     private int getSpeedDelay() {
         String speedStr = (String) simulateView.getSpeedDropdown().getSelectedItem();
         double speedMultiplier = Double.parseDouble(speedStr.replace("x", ""));
-        return (int) (1000 / speedMultiplier); // 1 second base / multiplier
+        return (int) (1000 / speedMultiplier);
     }
 
     private String generateRandomString(int count, int maxNumber) {

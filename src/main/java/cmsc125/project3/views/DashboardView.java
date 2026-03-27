@@ -1,5 +1,7 @@
 package cmsc125.project3.views;
 
+import cmsc125.project3.theme.ThemeManager;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -7,13 +9,23 @@ import java.awt.event.MouseEvent;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 
-public class DashboardView extends JPanel {
+public class DashboardView extends JPanel implements ThemeManager.ThemeObserver {
     private JButton helpBtn, aboutBtn, settingsBtn, startBtn, exitBtn;
 
     public DashboardView() {
+        initComponents();
+        applyTheme();
+        ThemeManager.addObserver(this);
+    }
+
+    @Override
+    public void onThemeChanged() {
+        applyTheme();
+    }
+
+    private void initComponents() {
         setLayout(new BorderLayout());
 
-        // TOP PANEL (Help, About, Settings)
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBorder(BorderFactory.createEmptyBorder(100, 100, 0, 100));
 
@@ -29,16 +41,11 @@ public class DashboardView extends JPanel {
         topPanel.add(settingsBtn, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
 
-        // CENTER PANEL (Custom PaperTrail Button)
         startBtn = new PaperTrailButton();
-
-        // To not stretch filling up entire screen
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.add(startBtn);
-
         add(centerWrapper, BorderLayout.CENTER);
 
-        // BOTTOM PANEL (Exit Button)
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 100, 0));
         exitBtn = createImageButton("/images/exit.png", "Exit");
@@ -46,7 +53,24 @@ public class DashboardView extends JPanel {
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
-    // Load images
+    private void applyTheme() {
+        updatePanelBackgrounds(this, ThemeManager.getBackgroundColor());
+        helpBtn.setForeground(ThemeManager.getTextColor());
+        aboutBtn.setForeground(ThemeManager.getTextColor());
+        settingsBtn.setForeground(ThemeManager.getTextColor());
+        exitBtn.setForeground(ThemeManager.getTextColor());
+        startBtn.repaint();
+    }
+
+    private void updatePanelBackgrounds(Container container, Color bg) {
+        container.setBackground(bg);
+        for (Component c : container.getComponents()) {
+            if (c instanceof Container) {
+                updatePanelBackgrounds((Container) c, bg);
+            }
+        }
+    }
+
     private JButton createImageButton(String imagePath, String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Arial", Font.BOLD, 16));
@@ -56,13 +80,8 @@ public class DashboardView extends JPanel {
                 btn.setIcon(new ImageIcon(imgURL));
                 btn.setVerticalTextPosition(SwingConstants.BOTTOM);
                 btn.setHorizontalTextPosition(SwingConstants.CENTER);
-            } else {
-                System.out.println("Could not find image: " + imagePath);
             }
-        } catch (Exception e) {
-            System.out.println("Error loading image: " + imagePath);
-        }
-
+        } catch (Exception e) {}
         btn.setFocusPainted(false);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
@@ -71,37 +90,45 @@ public class DashboardView extends JPanel {
     }
 
     private static class PaperTrailButton extends JButton {
-        private Color topColor = new Color(0xFF8405), shadowColor = new Color(0x4343BF), playFillColor = new Color(0x4343BF), playStrokeColor = new Color(0xFF8405);
+        private Color topColor, shadowColor, playFillColor, playStrokeColor;
 
         public PaperTrailButton() {
             setFocusPainted(false);
             setContentAreaFilled(false);
             setBorderPainted(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // Set strict size so GridBagLayout knows exactly how big the clickable area is
             setPreferredSize(new Dimension(850, 250));
+            resetDefaultColors();
 
-            // Swap colors on hover then redraw button
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
-                    topColor = new Color(0x4343BF);
-                    shadowColor = new Color(0xFF8405);
-                    playFillColor = new Color(0xFF8405);
-                    playStrokeColor = new Color(0x4343BF);
+                    topColor = ThemeManager.getAccentBlue();
+                    shadowColor = ThemeManager.getAccentOrange();
+                    playFillColor = ThemeManager.getAccentOrange();
+                    playStrokeColor = ThemeManager.getAccentBlue();
                     repaint();
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
-                    topColor = new Color(0xFF8405);
-                    shadowColor = new Color(0x4343BF);
-                    playFillColor = new Color(0x4343BF);
-                    playStrokeColor = new Color(0xFF8405);
+                    resetDefaultColors();
                     repaint();
                 }
             });
+        }
+
+        private void resetDefaultColors() {
+            topColor = ThemeManager.getAccentOrange();
+            shadowColor = ThemeManager.getAccentBlue();
+            playFillColor = ThemeManager.getAccentBlue();
+            playStrokeColor = ThemeManager.getAccentOrange();
+        }
+
+        @Override
+        public void repaint() {
+            resetDefaultColors(); // Ensure colors are correct before repainting
+            super.repaint();
         }
 
         @Override
@@ -113,12 +140,9 @@ public class DashboardView extends JPanel {
             String text = "PaperTrail";
             g2d.setFont(new Font("Arial", Font.BOLD, 150));
             FontMetrics metrics = g2d.getFontMetrics();
-
-            // Calculate center positions
             int textX = (getWidth() - metrics.stringWidth(text)) / 2;
             int textY = getHeight() / 2 + 50;
 
-            // Draw 5px Shadow
             g2d.setColor(shadowColor);
             int thickness = 5;
             for (int i = -thickness; i <= thickness; i++) {
@@ -126,30 +150,22 @@ public class DashboardView extends JPanel {
                     g2d.drawString(text, textX + i, textY + j);
                 }
             }
-
-            // Draw Top Text
             g2d.setColor(topColor);
             g2d.drawString(text, textX, textY);
 
-            // Draw Outlined Play Icon using TextLayout
             String playIcon = "▶︎";
             Font playFont = new Font("Arial", Font.BOLD, 200);
-            TextLayout layout = new TextLayout(playIcon, playFont, g2d.getFontRenderContext()); // Create TextLayout to extract vector shape of play symbol
+            TextLayout layout = new TextLayout(playIcon, playFont, g2d.getFontRenderContext());
             int playX = (getWidth() - (int) layout.getAdvance()) / 2;
-            AffineTransform originalTransform = g2d.getTransform(); // Save original graphics state before moving it
-            g2d.translate(playX, textY);     // Move graphics cursor to play icon location
-            Shape playShape = layout.getOutline(null);  // Get outline shape
+            AffineTransform originalTransform = g2d.getTransform();
+            g2d.translate(playX, textY);
+            Shape playShape = layout.getOutline(null);
 
-            // Fill inside of play icon
             g2d.setColor(playFillColor);
             g2d.fill(playShape);
-
-            // Draw outside stroke (outline) of play icon
             g2d.setColor(playStrokeColor);
             g2d.setStroke(new BasicStroke(5));
             g2d.draw(playShape);
-
-            // Reset graphics state back to normal
             g2d.setTransform(originalTransform);
         }
     }

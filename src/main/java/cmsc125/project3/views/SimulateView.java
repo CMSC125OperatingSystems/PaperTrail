@@ -8,61 +8,55 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimulateView extends JPanel {
+public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
     private JComboBox<String> dataGenDropdown, algoDropdown, speedDropdown;
     private JSpinner frameSizeSpinner;
     private JTextField pageRefField;
     private JButton actionBtn, redoBtn, resetBtn, outputBtn, backBtn;
     private SimulationBoard simulationBoard;
-    private JLabel totalFaultsLabel, timerLabel;
+    private JLabel frameLabel, speedLabel, totalFaultsLabel, stepsLabel;
     private JScrollPane scrollPane;
+
+    // Track states locally so html strings can re-evaluate on theme swap
+    private int currentFaults = 0;
+    private int currentSteps = 0;
 
     public SimulateView() {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        setBackground(ThemeManager.getBackgroundColor());
 
-        initComponents();
+        initComponents();       // 1. Build physical layout first
+        applyTheme();           // 2. Apply explicit colors & fonts
+
+        // Listen for SettingsDialog updates
+        ThemeManager.addObserver(this);
     }
 
     private void initComponents() {
         JPanel topWrapper = new JPanel();
         topWrapper.setLayout(new BoxLayout(topWrapper, BoxLayout.Y_AXIS));
-        topWrapper.setBackground(ThemeManager.getBackgroundColor());
 
         JPanel row1 = new JPanel(new BorderLayout());
-        row1.setBackground(ThemeManager.getBackgroundColor());
         row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 
         JPanel g1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        g1.setBackground(ThemeManager.getBackgroundColor());
         String[] dataGenOptions = {"User-Defined Input", "Random", "From a .txt file"};
         dataGenDropdown = new JComboBox<>(dataGenOptions);
-        dataGenDropdown.setFont(new Font("Arial", Font.BOLD, 18));
-        dataGenDropdown.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2));
         g1.add(dataGenDropdown);
 
         JPanel g2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        g2.setBackground(ThemeManager.getBackgroundColor());
         String[] algos = {
             "FIFO: First-In, First-Out", "LRU: Least Recently Used",
             "OPT: Optimal", "SC: Second Chance", "ESC: Enhanced Second Chance",
             "LFU: Least Frequently Used", "MFU: Most Frequently Used"
         };
         algoDropdown = new JComboBox<>(algos);
-        algoDropdown.setFont(new Font("Arial", Font.BOLD, 18));
-        algoDropdown.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentBlue(), 2));
         g2.add(algoDropdown);
 
         JPanel g3 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        g3.setBackground(ThemeManager.getBackgroundColor());
-        JLabel frameLabel = new JLabel("Page Frames: ");
-        frameLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        frameLabel.setForeground(ThemeManager.getTextColor());
+        frameLabel = new JLabel("Page Frames: ");
         SpinnerNumberModel spinnerModel = new SpinnerNumberModel(4, 3, 10, 1);
         frameSizeSpinner = new JSpinner(spinnerModel);
-        frameSizeSpinner.setFont(new Font("Arial", Font.BOLD, 18));
-        frameSizeSpinner.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2));
         g3.add(frameLabel);
         g3.add(frameSizeSpinner);
 
@@ -71,24 +65,11 @@ public class SimulateView extends JPanel {
         row1.add(g3, BorderLayout.EAST);
 
         JPanel row2 = new JPanel(new BorderLayout(5, 0));
-        row2.setBackground(ThemeManager.getBackgroundColor());
         pageRefField = new PlaceholderTextField("e.g., 7,0,1,2,0,3,0,4,2,3");
-        pageRefField.setFont(new Font("Arial", Font.BOLD, 18));
-        pageRefField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
         applyRealTimeFilter(pageRefField);
 
         actionBtn = new JButton("▶");
-        actionBtn.setFont(new Font("Arial", Font.BOLD, 18));
-        actionBtn.setBackground(ThemeManager.getAccentBlue());
-        actionBtn.setForeground(Color.WHITE); // The play icon is always white
         actionBtn.setFocusPainted(false);
-        actionBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2),
-            BorderFactory.createEmptyBorder(5, 15, 5, 15)
-        ));
 
         row2.add(pageRefField, BorderLayout.CENTER);
         row2.add(actionBtn, BorderLayout.EAST);
@@ -100,43 +81,28 @@ public class SimulateView extends JPanel {
 
         simulationBoard = new SimulationBoard();
         scrollPane = new JScrollPane(simulationBoard);
-        scrollPane.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorderColor(), 2));
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.getViewport().setBackground(ThemeManager.getBackgroundColor());
         add(scrollPane, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBackground(ThemeManager.getBackgroundColor());
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         JPanel bottomLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        bottomLeft.setBackground(ThemeManager.getBackgroundColor());
-
-        String textHex = ThemeManager.colorToHex(ThemeManager.getTextColor());
-        String redHex = ThemeManager.colorToHex(ThemeManager.getErrorRed());
-
-        totalFaultsLabel = new JLabel("<html><b style='color:" + textHex + ";'>Total Page Fault:</b> <span style='color:" + redHex + ";'>0</span></html>");
-        totalFaultsLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-
-        timerLabel = new JLabel("<html><b style='color:" + textHex + ";'>Timer:</b> <span style='color:" + textHex + ";'>0s</span></html>");
-        timerLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-
-        JLabel speedLabel = new JLabel("<html><b style='color:" + textHex + ";'>Speed:</b></html>");
-        speedLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        totalFaultsLabel = new JLabel();
+        stepsLabel = new JLabel();
+        speedLabel = new JLabel();
 
         String[] speeds = {"0.5x", "1.0x", "2.0x", "3.0x", "4.0x", "5.0x"};
         speedDropdown = new JComboBox<>(speeds);
         speedDropdown.setSelectedItem("1.0x");
 
         bottomLeft.add(totalFaultsLabel);
-        bottomLeft.add(timerLabel);
+        bottomLeft.add(stepsLabel);
         bottomLeft.add(speedLabel);
         bottomLeft.add(speedDropdown);
 
         JPanel bottomRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        bottomRight.setBackground(ThemeManager.getBackgroundColor());
-
         redoBtn = createIconButton("/images/redo.png", "Redo");
         resetBtn = createIconButton("/images/reset.png", "Reset");
         outputBtn = createIconButton("/images/export.png", "Output Algorithm");
@@ -153,15 +119,99 @@ public class SimulateView extends JPanel {
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * This method is called by the ThemeManager's observer pattern.
+     */
+    @Override
+    public void onThemeChanged() {
+        applyTheme();
+    }
+
+    /**
+     * Applies Backgrounds, Fonts, Borders, and HTML texts dynamically based on Settings
+     */
+    private void applyTheme() {
+        // Recursively update all inner JPanels backgrounds
+        updatePanelBackgrounds(this, ThemeManager.getBackgroundColor());
+
+        // Fonts
+        Font primaryFont = new Font("Arial", Font.BOLD, ThemeManager.getPrimaryFontSize());
+        dataGenDropdown.setFont(primaryFont);
+        algoDropdown.setFont(primaryFont);
+        frameLabel.setFont(primaryFont);
+        frameSizeSpinner.setFont(primaryFont);
+        pageRefField.setFont(primaryFont);
+        actionBtn.setFont(primaryFont);
+
+        Font secondaryFont = new Font("Arial", Font.PLAIN, ThemeManager.getSecondaryFontSize());
+        speedDropdown.setFont(secondaryFont);
+        totalFaultsLabel.setFont(secondaryFont);
+        stepsLabel.setFont(secondaryFont);
+        speedLabel.setFont(secondaryFont);
+
+        Font tertiaryFont = new Font("Arial", Font.BOLD, ThemeManager.getTertiaryFontSize());
+        redoBtn.setFont(tertiaryFont);
+        resetBtn.setFont(tertiaryFont);
+        outputBtn.setFont(tertiaryFont);
+        backBtn.setFont(tertiaryFont);
+
+        // Colors & Custom Borders
+        frameLabel.setForeground(ThemeManager.getTextColor());
+        dataGenDropdown.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2));
+        algoDropdown.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentBlue(), 2));
+        frameSizeSpinner.setBorder(BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2));
+        pageRefField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        actionBtn.setBackground(ThemeManager.getAccentBlue());
+        actionBtn.setForeground(Color.WHITE); // Play Icon is always white
+        actionBtn.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ThemeManager.getAccentOrange(), 2),
+            BorderFactory.createEmptyBorder(5, 15, 5, 15)
+        ));
+
+        scrollPane.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorderColor(), 2));
+        scrollPane.getViewport().setBackground(ThemeManager.getBackgroundColor());
+
+        redoBtn.setForeground(ThemeManager.getTextColor());
+        resetBtn.setForeground(ThemeManager.getTextColor());
+        outputBtn.setForeground(ThemeManager.getTextColor());
+        backBtn.setForeground(ThemeManager.getTextColor());
+
+        // Refresh HTML string labels
+        String textHex = ThemeManager.colorToHex(ThemeManager.getTextColor());
+        speedLabel.setText("<html><b style='color:" + textHex + ";'>Speed:</b></html>");
+        updateFaults(currentFaults);
+        updateSteps(currentSteps);
+
+        // Re-paint simulation board
+        simulationBoard.setBackground(ThemeManager.getBackgroundColor());
+        simulationBoard.repaint();
+    }
+
+    // Helper to deeply change JPanel backgrounds instantly
+    private void updatePanelBackgrounds(Container container, Color bg) {
+        if (container instanceof JPanel) {
+            container.setBackground(bg);
+        }
+        for (Component c : container.getComponents()) {
+            if (c instanceof Container) updatePanelBackgrounds((Container) c, bg);
+        }
+    }
+
     public void updateFaults(int faults) {
+        this.currentFaults = faults;
         String textHex = ThemeManager.colorToHex(ThemeManager.getTextColor());
         String redHex = ThemeManager.colorToHex(ThemeManager.getErrorRed());
         totalFaultsLabel.setText("<html><b style='color:" + textHex + ";'>Total Page Fault:</b> <span style='color:" + redHex + ";'>" + faults + "</span></html>");
     }
 
-    public void updateTimer(int ticks) {
+    public void updateSteps(int steps) {
+        this.currentSteps = steps;
         String textHex = ThemeManager.colorToHex(ThemeManager.getTextColor());
-        timerLabel.setText("<html><b style='color:" + textHex + ";'>Timer:</b> <span style='color:" + textHex + ";'>" + ticks + "s</span></html>");
+        stepsLabel.setText("<html><b style='color:" + textHex + ";'>Steps:</b> <span style='color:" + textHex + ";'>" + steps + "</span></html>");
     }
 
     private void applyRealTimeFilter(JTextField textField) {
@@ -198,7 +248,7 @@ public class SimulateView extends JPanel {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2d.setColor(ThemeManager.getPlaceholderColor());
-                g2d.setFont(new Font("Arial", Font.ITALIC, 16));
+                g2d.setFont(new Font("Arial", Font.ITALIC, ThemeManager.getPrimaryFontSize()));
                 int textY = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
                 g2d.drawString(placeholder, getInsets().left, textY);
             }
@@ -217,8 +267,6 @@ public class SimulateView extends JPanel {
                 btn.setHorizontalTextPosition(SwingConstants.CENTER);
             }
         } catch (Exception e) {}
-        btn.setFont(new Font("Arial", Font.BOLD, 11));
-        btn.setForeground(ThemeManager.getTextColor());
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false);
         btn.setContentAreaFilled(false);
@@ -230,7 +278,9 @@ public class SimulateView extends JPanel {
         private final List<StepData> steps = new ArrayList<>();
         private int frameSize = 4;
 
-        public SimulationBoard() { setBackground(ThemeManager.getBackgroundColor()); }
+        public SimulationBoard() {
+            setBackground(ThemeManager.getBackgroundColor());
+        }
 
         public void clear() {
             steps.clear();

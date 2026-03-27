@@ -6,7 +6,7 @@
 
     <groupId>cmsc125.project3</groupId>
     <artifactId>PaperTrail</artifactId>
-    <version>0.8.3-SNAPSHOT</version>
+    <version>0.8.5-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
