@@ -30,7 +30,6 @@ public class ThemeManager {
     public static void setFontSize(FontSize size) { currentSize = size; }
     public static FontSize getFontSize() { return currentSize; }
 
-    // --- FONT SIZES (Drastically Increased) ---
     public static int getPrimaryFontSize() {
         if (currentSize == FontSize.LARGE) return 36;
         if (currentSize == FontSize.MEDIUM) return 24;
@@ -49,12 +48,11 @@ public class ThemeManager {
         return 12;
     }
 
-    // --- COLORS ---
     public static Color getBackgroundColor() {
         return currentTheme == Theme.LIGHT ? Color.WHITE : new Color(0x121212);
     }
     public static Color getPanelColor() {
-        return currentTheme == Theme.LIGHT ? Color.WHITE : new Color(0x1E1E1E);
+        return currentTheme == Theme.LIGHT ? new Color(0xF5F5F5) : new Color(0x1E1E1E);
     }
     public static Color getTextColor() {
         return currentTheme == Theme.LIGHT ? Color.BLACK : new Color(0xE0E0E0);
@@ -85,6 +83,8 @@ public class ThemeManager {
         UIManager.put("Panel.background", getBackgroundColor());
         UIManager.put("OptionPane.background", getPanelColor());
         UIManager.put("OptionPane.messageForeground", getTextColor());
+
+        // Aggressively override defaults for input components
         UIManager.put("Button.background", getPanelColor());
         UIManager.put("Button.foreground", getTextColor());
         UIManager.put("Label.foreground", getTextColor());
@@ -92,6 +92,7 @@ public class ThemeManager {
         UIManager.put("RadioButton.foreground", getTextColor());
         UIManager.put("ComboBox.background", getPanelColor());
         UIManager.put("ComboBox.foreground", getTextColor());
+        UIManager.put("ComboBox.buttonBackground", getPanelColor());
         UIManager.put("ComboBox.selectionBackground", getAccentBlue());
         UIManager.put("ComboBox.selectionForeground", Color.WHITE);
         UIManager.put("TextField.background", getPanelColor());
@@ -99,5 +100,9 @@ public class ThemeManager {
         UIManager.put("TextField.caretForeground", getTextColor());
         UIManager.put("Spinner.background", getPanelColor());
         UIManager.put("Spinner.foreground", getTextColor());
+
+        // Scrollpanes
+        UIManager.put("ScrollPane.background", getBackgroundColor());
+        UIManager.put("Viewport.background", getBackgroundColor());
     }
 }

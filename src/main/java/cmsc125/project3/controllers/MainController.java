@@ -73,6 +73,7 @@ public class MainController {
 
         simulateView.getRandomBtn().addActionListener(e -> {
             String lengthStr = JOptionPane.showInputDialog(simulateView, "Enter reference string size (10-40):", "20");
+            if (lengthStr == null) return; // User canceled
             try {
                 int length = Integer.parseInt(lengthStr);
                 if (length < 10 || length > 40) throw new NumberFormatException();
@@ -83,7 +84,7 @@ public class MainController {
         });
 
         simulateView.getBrowseBtn().addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir")); // Start in project directory
+            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
             if (fileChooser.showOpenDialog(simulateView) == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
                 try (Scanner scanner = new Scanner(file)) {
@@ -93,6 +94,13 @@ public class MainController {
                 } catch (FileNotFoundException ex) {
                     JOptionPane.showMessageDialog(simulateView, "File not found.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
+            }
+        });
+
+        // --- LIVE SPEED UPDATES ---
+        simulateView.getSpeedDropdown().addActionListener(e -> {
+            if (simTimer != null) {
+                simTimer.setDelay(getSpeedDelay());
             }
         });
 
@@ -133,7 +141,6 @@ public class MainController {
             FIFO sim = createAlgorithmInstance(algoName, sequence, frameSize);
             runningSimulations.add(sim);
             runningAlgoNames.add(algoName);
-            // PASSED FRAMESIZE HERE SO IT CALCULATES HEIGHT CORRECTLY!
             simulateView.addAlgorithmPanel(algoName, frameSize);
         }
 

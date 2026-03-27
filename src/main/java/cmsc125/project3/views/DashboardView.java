@@ -103,8 +103,8 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
                 public void mouseEntered(MouseEvent e) {
                     topColor = ThemeManager.getAccentBlue();
                     shadowColor = ThemeManager.getAccentOrange();
-                    playFillColor = ThemeManager.getAccentOrange();
-                    playStrokeColor = ThemeManager.getAccentBlue();
+                    playFillColor = ThemeManager.getAccentOrange(); // Solid Orange
+                    playStrokeColor = ThemeManager.getAccentBlue(); // Solid Blue
                     repaint();
                 }
 
@@ -119,13 +119,20 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
         private void resetDefaultColors() {
             topColor = ThemeManager.getAccentOrange();
             shadowColor = ThemeManager.getAccentBlue();
-            playFillColor = ThemeManager.getAccentBlue();
-            playStrokeColor = ThemeManager.getAccentOrange();
+
+            Color ab = ThemeManager.getAccentBlue();
+            Color ao = ThemeManager.getAccentOrange();
+
+            // Add Opacity (Alpha = 100 out of 255) for the default transparent state
+            playFillColor = new Color(ab.getRed(), ab.getGreen(), ab.getBlue(), 100);
+            playStrokeColor = new Color(ao.getRed(), ao.getGreen(), ao.getBlue(), 100);
         }
 
         @Override
         public void repaint() {
-            resetDefaultColors(); // Ensure colors are correct before repainting
+            if (!getModel().isRollover()) {
+                resetDefaultColors();
+            }
             super.repaint();
         }
 
@@ -153,7 +160,7 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
             g2d.setColor(topColor);
             g2d.drawString(text, textX, textY);
 
-            // Draw Custom Polygon Play Icon (Fixes the missing glyph box issue completely)
+            // Draw Custom Polygon Play Icon
             int size = 160;
             int px = (getWidth() - size) / 2 + 10;
             int py = (getHeight() - size) / 2;
