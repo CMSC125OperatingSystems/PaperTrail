@@ -1,9 +1,13 @@
 package cmsc125.project3.controllers;
 
 import cmsc125.project3.services.*;
+import cmsc125.project3.theme.ThemeManager;
 import cmsc125.project3.views.*;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -112,6 +116,10 @@ public class MainController {
             simulateView.clearResults();
             simulateView.setInfo(" ", 0);
         });
+
+        simulateView.getOutputBtn().addActionListener(e -> {
+            exportResults();
+        });
     }
 
     private void startSimulation() {
@@ -177,6 +185,78 @@ public class MainController {
             int hits = totalSteps - faults;
             double faultRate = (double) faults / totalSteps;
             simulateView.addSummaryToAlgorithm(i, hits, faults, faultRate);
+        }
+    }
+
+    /**
+     * Captures the entire resultsContainer as an image and saves it.
+     */
+    private void exportResults() {
+        JPanel results = simulateView.getResultsContainer();
+
+        if (results.getComponentCount() == 0) {
+            JOptionPane.showMessageDialog(simulateView, "No simulation results to export.", "Export Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // 1. Let user choose format
+        Object[] options = {"PNG Image", "Cancel"};
+        int choice = JOptionPane.showOptionDialog(simulateView,
+            "Exporting all current algorithm results.\nFormat: PNG (Lossless High Quality)",
+            "Export Results",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+
+        if (choice != 0) return;
+
+        // 2. Setup File Chooser
+        JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+        fileChooser.setDialogTitle("Save Export As");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("PNG Image", "png"));
+
+        if (fileChooser.showSaveDialog(simulateView) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            // Ensure .png extension
+            if (!file.getName().toLowerCase().endsWith(".png")) {
+                file = new File(file.getAbsolutePath() + ".png");
+            }
+
+            try {
+                // 3. CAPTURE LOGIC
+                // We need to capture the panel at its actual preferred size, not just what's visible
+                int width = results.getWidth();
+                int height = results.getHeight();
+
+                // If the panel hasn't been fully painted or is 0, use preferred size
+                if (width <= 0 || height <= 0) {
+                    width = results.getPreferredSize().width;
+                    height = results.getPreferredSize().height;
+                }
+
+                BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2 = image.createGraphics();
+
+                // Set background for the image based on theme
+                g2.setColor(ThemeManager.getBackgroundColor());
+                g2.fillRect(0, 0, width, height);
+
+                // Paint the results container onto the image
+                results.paint(g2);
+                g2.dispose();
+
+                // 4. SAVE
+                ImageIO.write(image, "png", file);
+
+                JOptionPane.showMessageDialog(simulateView,
+                    "Successfully exported results to:\n" + file.getAbsolutePath(),
+                    "Export Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(simulateView, "Failed to export: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 

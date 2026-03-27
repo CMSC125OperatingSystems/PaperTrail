@@ -254,10 +254,10 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
     private static class AlgorithmResultPanel extends JPanel {
         private final SimulationBoard board;
         private final int requiredHeight;
-        private final String algorithmName; // Store name to prevent "Algorithm" generic label
+        private final String algorithmName;
 
         public AlgorithmResultPanel(String name, int frameSize) {
-            this.algorithmName = name; // Save the name immediately
+            this.algorithmName = name;
             setLayout(new BorderLayout());
 
             board = new SimulationBoard(frameSize);
@@ -265,9 +265,22 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
+            // --- FIX: MOUSE WHEEL BUBBLING ---
+            scrollPane.addMouseWheelListener(e -> {
+                // Find the main vertical JScrollPane in SimulateView
+                Container parent = getParent();
+                while (parent != null && !(parent instanceof JScrollPane)) {
+                    parent = parent.getParent();
+                }
+                if (parent != null) {
+                    // Forward the event to the parent scroll pane
+                    parent.dispatchEvent(SwingUtilities.convertMouseEvent(scrollPane, e, parent));
+                }
+            });
+
             int cellSize = Math.max(35, ThemeManager.getSecondaryFontSize() + 15);
             int boardHeight = 80 + (frameSize * cellSize);
-            this.requiredHeight = boardHeight + 80; // Adjusted for labels
+            this.requiredHeight = boardHeight + 80;
 
             scrollPane.setPreferredSize(new Dimension(800, boardHeight));
             add(scrollPane, BorderLayout.CENTER);
@@ -483,6 +496,7 @@ public class SimulateView extends JPanel implements ThemeManager.ThemeObserver {
         }
     }
 
+    public JPanel getResultsContainer() { return resultsContainer; }
     public JComboBox<String> getDataGenDropdown() { return dataGenDropdown; }
     public JTextField getPageRefField() { return pageRefField; }
     public JButton getRunBtn() { return runBtn; }
