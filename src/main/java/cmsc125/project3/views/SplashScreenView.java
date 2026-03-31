@@ -37,7 +37,8 @@ public class SplashScreenView extends JPanel implements ThemeManager.ThemeObserv
         g2d.setFont(new Font("Arial", Font.BOLD, 150));
 
         FontMetrics metrics = g2d.getFontMetrics();
-        int textX = (getWidth() - metrics.stringWidth(text)) / 2, textY = getHeight() / 2 - 20;
+        int textX = (getWidth() - metrics.stringWidth(text)) / 2;
+        int textY = getHeight() / 2 - 60; // Shifted up slightly to fit subtitle
 
         g2d.setColor(ThemeManager.getAccentBlue());
         int thickness = 5;
@@ -50,7 +51,21 @@ public class SplashScreenView extends JPanel implements ThemeManager.ThemeObserv
         g2d.setColor(ThemeManager.getAccentOrange());
         g2d.drawString(text, textX, textY);
 
-        int barWidth = 750, barHeight = 75, barX = (getWidth() - barWidth) / 2, barY = textY + 50, sectionWidth = barWidth / 10;
+        // --- NEW: ADD SUBTITLE HERE ---
+        String subtitle = "Page Replacement Algorithms Simulator";
+        g2d.setFont(new Font("Arial", Font.PLAIN, 32)); // Clean, smaller font
+        FontMetrics subMetrics = g2d.getFontMetrics();
+        int subX = (getWidth() - subMetrics.stringWidth(subtitle)) / 2;
+        int subY = textY + 60; // Position below the main title
+
+        g2d.setColor(ThemeManager.getTextColor()); // Resolves nicely in Light/Dark theme
+        g2d.drawString(subtitle, subX, subY);
+        // ------------------------------
+
+        int barWidth = 750, barHeight = 75, barX = (getWidth() - barWidth) / 2;
+        int barY = subY + 60; // Push progress bar lower to account for subtitle
+        int sectionWidth = barWidth / 10;
+
         for (int i = 0; i < 10; i++) {
             int currentSectionX = barX + (i * sectionWidth);
             if (i < progressTick) {
@@ -68,7 +83,9 @@ public class SplashScreenView extends JPanel implements ThemeManager.ThemeObserv
         g2d.setFont(new Font("Arial", Font.BOLD, 32));
 
         FontMetrics percentMetrics = g2d.getFontMetrics();
-        int percentX = (getWidth() - percentMetrics.stringWidth(percentageText)) / 2, percentY = barY + barHeight + 50;
+        int percentX = (getWidth() - percentMetrics.stringWidth(percentageText)) / 2;
+        int percentY = barY + barHeight + 50;
+
         g2d.setColor(ThemeManager.getTextColor());
         g2d.drawString(percentageText, percentX, percentY);
     }

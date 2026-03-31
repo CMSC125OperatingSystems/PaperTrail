@@ -16,6 +16,12 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.StringJoiner;
 import java.awt.*;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 public class MainController {
     private final SimulateView simulateView;
@@ -189,7 +195,7 @@ public class MainController {
     }
 
     /**
-     * Captures the entire resultsContainer as an image and saves it.
+     * Captures the entire resultsContainer as an image and saves it as PNG or PDF.
      */
     private void exportResults() {
         JPanel results = simulateView.getResultsContainer();
@@ -200,31 +206,38 @@ public class MainController {
         }
 
         // 1. Let user choose format
-        Object[] options = {"PNG Image", "Cancel"};
+        Object[] options = {"PNG Image", "PDF Document", "Cancel"};
         int choice = JOptionPane.showOptionDialog(simulateView,
-            "Exporting all current algorithm results.\nFormat: PNG (Lossless High Quality)",
-            "Export Results",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                "Exporting all current algorithm results.\nSelect Export Format:",
+                "Export Results",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 
-        if (choice != 0) return;
+        if (choice == 2 || choice == JOptionPane.CLOSED_OPTION) return; // User cancelled
+
+        boolean isPdf = (choice == 1);
 
         // 2. Setup File Chooser
         JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
         fileChooser.setDialogTitle("Save Export As");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("PNG Image", "png"));
+
+        if (isPdf) {
+            fileChooser.setFileFilter(new FileNameExtensionFilter("PDF Document", "pdf"));
+        } else {
+            fileChooser.setFileFilter(new FileNameExtensionFilter("PNG Image", "png"));
+        }
 
         if (fileChooser.showSaveDialog(simulateView) == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
 
-            // Ensure .png extension
-            if (!file.getName().toLowerCase().endsWith(".png")) {
-                file = new File(file.getAbsolutePath() + ".png");
+            // Ensure correct file extension
+            String ext = isPdf ? ".pdf" : ".png";
+            if (!file.getName().toLowerCase().endsWith(ext)) {
+                file = new File(file.getAbsolutePath() + ext);
             }
 
             try {
                 // 3. CAPTURE LOGIC
-                // We need to capture the panel at its actual preferred size, not just what's visible
                 int width = results.getWidth();
                 int height = results.getHeight();
 
@@ -245,13 +258,28 @@ public class MainController {
                 results.paint(g2);
                 g2.dispose();
 
-                // 4. SAVE
-                ImageIO.write(image, "png", file);
+                // 4. SAVE based on user choice
+                if (isPdf) {
+                    try (PDDocument document = new PDDocument()) {
+                        // Create a custom PDF page size matching the image dimensions
+                        PDPage page = new PDPage(new PDRectangle(width, height));
+                        document.addPage(page);
+
+                        // Embed the image into the PDF
+                        PDImageXObject pdImage = LosslessFactory.createFromImage(document, image);
+                        try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+                            contentStream.drawImage(pdImage, 0, 0, width, height);
+                        }
+                        document.save(file);
+                    }
+                } else {
+                    ImageIO.write(image, "png", file);
+                }
 
                 JOptionPane.showMessageDialog(simulateView,
-                    "Successfully exported results to:\n" + file.getAbsolutePath(),
-                    "Export Complete",
-                    JOptionPane.INFORMATION_MESSAGE);
+                        "Successfully exported results to:\n" + file.getAbsolutePath(),
+                        "Export Complete",
+                        JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
                 ex.printStackTrace();

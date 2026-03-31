@@ -88,7 +88,6 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
     }
 
     private static class PaperTrailButton extends JButton {
-        private Color topColor, shadowColor, playFillColor, playStrokeColor;
 
         public PaperTrailButton() {
             setFocusPainted(false);
@@ -96,44 +95,16 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
             setBorderPainted(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setPreferredSize(new Dimension(850, 250));
-            resetDefaultColors();
 
+            // Just ask Swing to redraw when the mouse enters/exits.
+            // Logic is handled in paintComponent!
             addMouseListener(new MouseAdapter() {
                 @Override
-                public void mouseEntered(MouseEvent e) {
-                    topColor = ThemeManager.getAccentBlue();
-                    shadowColor = ThemeManager.getAccentOrange();
-                    playFillColor = ThemeManager.getAccentOrange(); // Solid Orange
-                    playStrokeColor = ThemeManager.getAccentBlue(); // Solid Blue
-                    repaint();
-                }
+                public void mouseEntered(MouseEvent e) { repaint(); }
 
                 @Override
-                public void mouseExited(MouseEvent e) {
-                    resetDefaultColors();
-                    repaint();
-                }
+                public void mouseExited(MouseEvent e) { repaint(); }
             });
-        }
-
-        private void resetDefaultColors() {
-            topColor = ThemeManager.getAccentOrange();
-            shadowColor = ThemeManager.getAccentBlue();
-
-            Color ab = ThemeManager.getAccentBlue();
-            Color ao = ThemeManager.getAccentOrange();
-
-            // Add Opacity (Alpha = 100 out of 255) for the default transparent state
-            playFillColor = new Color(ab.getRed(), ab.getGreen(), ab.getBlue(), 100);
-            playStrokeColor = new Color(ao.getRed(), ao.getGreen(), ao.getBlue(), 100);
-        }
-
-        @Override
-        public void repaint() {
-            if (!getModel().isRollover()) {
-                resetDefaultColors();
-            }
-            super.repaint();
         }
 
         @Override
@@ -141,6 +112,25 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Check if the cursor is currently hovering over the button
+            boolean isHover = getModel().isRollover();
+
+            // Dynamically fetch the correct theme colors based on hover state
+            Color topColor = isHover ? ThemeManager.getAccentBlue() : ThemeManager.getAccentOrange();
+            Color shadowColor = isHover ? ThemeManager.getAccentOrange() : ThemeManager.getAccentBlue();
+
+            Color ab = ThemeManager.getAccentBlue();
+            Color ao = ThemeManager.getAccentOrange();
+
+            // Default has 100 alpha transparency, Hover is solid
+            Color playFillColor = isHover
+                    ? ThemeManager.getAccentOrange()
+                    : new Color(ab.getRed(), ab.getGreen(), ab.getBlue(), 100);
+
+            Color playStrokeColor = isHover
+                    ? ThemeManager.getAccentBlue()
+                    : new Color(ao.getRed(), ao.getGreen(), ao.getBlue(), 100);
 
             String text = "PaperTrail";
             g2d.setFont(new Font("Arial", Font.BOLD, 150));
@@ -156,6 +146,7 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
                     g2d.drawString(text, textX + i, textY + j);
                 }
             }
+
             // Draw Main Text
             g2d.setColor(topColor);
             g2d.drawString(text, textX, textY);
