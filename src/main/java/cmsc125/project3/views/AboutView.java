@@ -43,9 +43,9 @@ public class AboutView extends JPanel implements ThemeManager.ThemeObserver {
         centerPanel.add(teamTitle, BorderLayout.NORTH);
 
         devsPanel = new JPanel(new GridLayout(1, 3, 30, 0));
-        devsPanel.add(createDeveloperPanel("ali1x3", "Member", "/images/dev1_placeholder.png"));
-        devsPanel.add(createDeveloperPanel("Schneidelstrom", "Group Leader", "/images/dev2_placeholder.png"));
-        devsPanel.add(createDeveloperPanel("ddrhckrzz", "Member", "/images/dev3_placeholder.png"));
+        devsPanel.add(createDeveloperPanel("ali1x3", "Member", "/images/dev1.png"));
+        devsPanel.add(createDeveloperPanel("Schneidelstrom", "Group Leader", "/images/dev2.png"));
+        devsPanel.add(createDeveloperPanel("ddrhckrzz", "Member", "/images/dev3.png"));
         centerPanel.add(devsPanel, BorderLayout.CENTER);
 
         footerPanel = new JPanel();
@@ -77,47 +77,46 @@ public class AboutView extends JPanel implements ThemeManager.ThemeObserver {
     }
 
     private void applyTheme() {
-        updatePanelBackgrounds(this, ThemeManager.getBackgroundColor());
+        updateComponentTheme(this);
 
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 42));
         titleLabel.setForeground(ThemeManager.getAccentBlue());
-
-        descLabel.setFont(new Font("Arial", Font.PLAIN, ThemeManager.getPrimaryFontSize()));
-        descLabel.setForeground(ThemeManager.getSecondaryTextColor());
-
-        teamTitle.setFont(new Font("Arial", Font.BOLD, 24));
         teamTitle.setForeground(ThemeManager.getAccentOrange());
 
         String githubHex = ThemeManager.colorToHex(ThemeManager.getAccentBlue());
         githubBtn.setText("<html><u style='color:" + githubHex + ";'>View source code on GitHub</u></html>");
-        githubBtn.setFont(new Font("Arial", Font.PLAIN, ThemeManager.getSecondaryFontSize()));
-
-        copyrightLabel.setFont(new Font("Arial", Font.PLAIN, ThemeManager.getTertiaryFontSize()));
-        copyrightLabel.setForeground(ThemeManager.getSecondaryTextColor());
 
         backBtn.setBackground(ThemeManager.getPanelColor());
         backBtn.setForeground(ThemeManager.getTextColor());
     }
 
-    private void updatePanelBackgrounds(Container container, Color bg) {
-        container.setBackground(bg);
+    private void updateComponentTheme(Container container) {
+        // Check if this specific panel is a Developer Card
+        if (container instanceof JPanel) {
+            if ("DevCard".equals(container.getName())) container.setBackground(ThemeManager.getPanelColor());
+            else container.setBackground(ThemeManager.getBackgroundColor());
+        }
+
         for (Component c : container.getComponents()) {
-            if (c instanceof JPanel) {
-                updatePanelBackgrounds((JPanel)c, bg);
+            if (c instanceof JLabel) {
+                JLabel lbl = (JLabel) c;
+                if (lbl == copyrightLabel || (lbl.getFont() != null && lbl.getFont().getSize() == 16)) lbl.setForeground(ThemeManager.getSecondaryTextColor());
+                else lbl.setForeground(ThemeManager.getTextColor());
             }
+
+            if (c instanceof Container) updateComponentTheme((Container) c);
         }
     }
 
     private JPanel createDeveloperPanel(String name, String role, String imagePath) {
         JPanel panel = new JPanel();
+        panel.setName("DevCard");
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(ThemeManager.getPanelColor()); // Use panel color for contrast
 
         JLabel imageLabel = new JLabel();
         imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         imageLabel.setPreferredSize(new Dimension(120, 120));
         imageLabel.setMaximumSize(new Dimension(120, 120));
-        imageLabel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 2));
+        imageLabel.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorderColor(), 2));
         imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         try {
@@ -136,18 +135,17 @@ public class AboutView extends JPanel implements ThemeManager.ThemeObserver {
         JLabel nameLabel = new JLabel(name);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        nameLabel.setForeground(ThemeManager.getTextColor());
 
         JLabel roleLabel = new JLabel(role);
         roleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        roleLabel.setForeground(ThemeManager.getSecondaryTextColor());
 
         panel.add(imageLabel);
         panel.add(Box.createVerticalStrut(15));
         panel.add(nameLabel);
         panel.add(Box.createVerticalStrut(5));
         panel.add(roleLabel);
+
         return panel;
     }
 

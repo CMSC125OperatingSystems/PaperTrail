@@ -9,15 +9,15 @@ import java.awt.*;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Force standard cross-platform look & feel to prevent OS Dark Mode clashing
+        // Force standard cross-platform look & feel to prevent OS Dark Mode clashing
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // 2. Initialize and Apply our Custom Theme
-        ThemeManager.setTheme(ThemeManager.Theme.DARK); // Set to LIGHT or DARK here
+        // Initialize and Apply our Custom Theme
+        ThemeManager.setTheme(ThemeManager.Theme.DARK);
         ThemeManager.applyGlobalUIManager();
 
         JFrame frame = new JFrame("PaperTrail Initialization");

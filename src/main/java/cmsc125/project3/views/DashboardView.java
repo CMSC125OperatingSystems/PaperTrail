@@ -96,8 +96,6 @@ public class DashboardView extends JPanel implements ThemeManager.ThemeObserver 
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setPreferredSize(new Dimension(850, 250));
 
-            // Just ask Swing to redraw when the mouse enters/exits.
-            // Logic is handled in paintComponent!
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) { repaint(); }

@@ -88,12 +88,17 @@ public class HelpView extends JPanel implements ThemeManager.ThemeObserver {
     private JPanel createStepPanel(int stepNum) {
         String title = getTitleForStep(stepNum);
         String description = getDescriptionForStep(stepNum);
-        String imagePath = "/images/step" + stepNum + "_placeholder.png";
+        String imagePath = "/images/step" + stepNum + ".png";
 
         JPanel panel = new JPanel(new BorderLayout(0, 20));
+        panel.setOpaque(false);
+
         JPanel textPanel = new JPanel(new BorderLayout(0, 15));
+        textPanel.setOpaque(false);
+
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
+
         JTextArea descArea = new JTextArea(description);
         descArea.setFont(new Font("SansSerif", Font.PLAIN, 16));
         descArea.setLineWrap(true);
@@ -105,23 +110,55 @@ public class HelpView extends JPanel implements ThemeManager.ThemeObserver {
         textPanel.add(titleLabel, BorderLayout.NORTH);
         textPanel.add(descArea, BorderLayout.CENTER);
 
-        JLabel imageLabel = new JLabel("Image placeholder: " + imagePath, SwingConstants.CENTER);
-        imageLabel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        imageLabel.setPreferredSize(new Dimension(800, 400));
+        Image loadedImg = null;
         try {
             java.net.URL imgURL = getClass().getResource(imagePath);
             if (imgURL != null) {
-                imageLabel.setIcon(new ImageIcon(imgURL));
-                imageLabel.setText("");
+                loadedImg = new ImageIcon(imgURL).getImage();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("Could not load image: " + imagePath);
+        }
+
+        final Image finalImg = loadedImg;
+
+        JPanel imageContainer = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (finalImg != null) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+                    int imgW = finalImg.getWidth(this);
+                    int imgH = finalImg.getHeight(this);
+
+                    if (imgW > 0 && imgH > 0) {
+                        double scale = Math.min((double) getWidth() / imgW, (double) getHeight() / imgH);
+                        int drawW = (int) (imgW * scale);
+                        int drawH = (int) (imgH * scale);
+
+                        int x = (getWidth() - drawW) / 2;
+                        int y = (getHeight() - drawH) / 2;
+
+                        g2d.drawImage(finalImg, x, y, drawW, drawH, this);
+                    }
+                } else {
+                    g.setColor(ThemeManager.getTextColor());
+                    g.drawString("Missing Image: " + imagePath, 20, getHeight() / 2);
+                }
+            }
+        };
+
+        imageContainer.setOpaque(false);
+        imageContainer.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
 
         panel.add(textPanel, BorderLayout.NORTH);
-        panel.add(imageLabel, BorderLayout.CENTER);
+        panel.add(imageContainer, BorderLayout.CENTER);
+
         return panel;
     }
 
-    // ... (rest of HelpView remains the same: setupInternalNavigation, updateButtonStates, getBackBtn, etc.) ...
     private void setupInternalNavigation() {
         nextBtn.addActionListener(e -> {
             if (currentStepIndex < TOTAL_STEPS) {

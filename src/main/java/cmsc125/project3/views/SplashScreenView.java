@@ -51,16 +51,14 @@ public class SplashScreenView extends JPanel implements ThemeManager.ThemeObserv
         g2d.setColor(ThemeManager.getAccentOrange());
         g2d.drawString(text, textX, textY);
 
-        // --- NEW: ADD SUBTITLE HERE ---
         String subtitle = "Page Replacement Algorithms Simulator";
-        g2d.setFont(new Font("Arial", Font.PLAIN, 32)); // Clean, smaller font
+        g2d.setFont(new Font("Arial", Font.PLAIN, 32));
         FontMetrics subMetrics = g2d.getFontMetrics();
         int subX = (getWidth() - subMetrics.stringWidth(subtitle)) / 2;
-        int subY = textY + 60; // Position below the main title
+        int subY = textY + 80;
 
-        g2d.setColor(ThemeManager.getTextColor()); // Resolves nicely in Light/Dark theme
+        g2d.setColor(ThemeManager.getTextColor());
         g2d.drawString(subtitle, subX, subY);
-        // ------------------------------
 
         int barWidth = 750, barHeight = 75, barX = (getWidth() - barWidth) / 2;
         int barY = subY + 60; // Push progress bar lower to account for subtitle

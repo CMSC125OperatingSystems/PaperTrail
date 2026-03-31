@@ -70,7 +70,7 @@ public class MainController {
         simulateView.getBackBtn().addActionListener(e -> { if (simTimer != null) simTimer.stop(); cardLayout.show(cardPanel, "Dashboard"); });
         help.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
         about.getBackBtn().addActionListener(e -> cardLayout.show(cardPanel, "Dashboard"));
-        about.getGithubBtn().addActionListener(e -> { try { Desktop.getDesktop().browse(new java.net.URI("https://github.com/YourUsername/YourRepository")); } catch (Exception ex) { ex.printStackTrace(); } });
+        about.getGithubBtn().addActionListener(e -> { try { Desktop.getDesktop().browse(new java.net.URI("https://github.com/CMSC125OperatingSystems/PaperTrail.git")); } catch (Exception ex) { ex.printStackTrace(); } });
     }
 
     private void initSimulationListeners() {
